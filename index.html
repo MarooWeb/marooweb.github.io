@@ -1169,4 +1169,79 @@ document.querySelectorAll('.card a.shot').forEach(a=>{
   a.addEventListener('click',e=>{if(a.classList.contains('pc-ready'))e.preventDefault()});
 });
 </script>
+<!-- react-bits style animations (BlurText, CountUp, SpotlightCard, Particles), vanilla JS ports -->
+<style>
+.bt-w{display:inline-block;opacity:0;filter:blur(10px);transform:translateY(-22px);transition:opacity .6s ease,filter .6s ease,transform .6s ease;will-change:transform,filter,opacity}
+.bt-w.on{opacity:1;filter:blur(0);transform:none}
+.card,.sv,.stat,.final{position:relative}
+.card::before,.sv::before,.stat::before,.final::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity .35s;background:radial-gradient(circle 220px at var(--mx,50%) var(--my,50%),rgba(0,229,255,.16),transparent 70%)}
+.card.sp::before,.sv.sp::before,.stat.sp::before,.final.sp::before{opacity:1}
+#bg-particles{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.bt-w{opacity:1;filter:none;transform:none;transition:none}#bg-particles{display:none}}
+</style>
+<script>
+(()=>{
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* BlurText: word by word blur-in (word level, so Arabic letters stay joined) */
+function splitWords(el){
+  const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);const nodes=[];
+  while(walker.nextNode())nodes.push(walker.currentNode);
+  const words=[];
+  nodes.forEach(n=>{
+    if(!n.nodeValue.trim())return;
+    const frag=document.createDocumentFragment();
+    n.nodeValue.split(/(\s+)/).forEach(part=>{
+      if(!part)return;
+      if(/^\s+$/.test(part)){frag.appendChild(document.createTextNode(' '));return}
+      const s=document.createElement('span');s.className='bt-w';s.textContent=part;frag.appendChild(s);words.push(s);
+    });
+    n.parentNode.replaceChild(frag,n);
+  });
+  return words;
+}
+if(!RM){
+  const io=new IntersectionObserver(es=>es.forEach(e=>{
+    if(!e.isIntersecting)return;io.unobserve(e.target);
+    e.target._w.forEach((w,i)=>setTimeout(()=>w.classList.add('on'),i*110));
+  }),{threshold:.3});
+  document.querySelectorAll('.hero h1,.h h2,.final h2').forEach(el=>{el._w=splitWords(el);if(el._w.length)io.observe(el)});
+}
+/* CountUp on the numeric stats */
+if(!RM){
+  const io2=new IntersectionObserver(es=>es.forEach(e=>{
+    if(!e.isIntersecting)return;io2.unobserve(e.target);
+    const el=e.target,m=el.dataset.cu.match(/^(\d+)(.*)$/),to=+m[1],suf=m[2],t0=performance.now(),d=1600;
+    (function f(t){const p=Math.min(1,(t-t0)/d),v=Math.round(to*(1-Math.pow(1-p,3)));el.textContent=v+suf;if(p<1)requestAnimationFrame(f)})(t0);
+  }),{threshold:.6});
+  document.querySelectorAll('.stat b').forEach(b=>{const tx=b.textContent.trim();if(/^\d+\D*$/.test(tx)){b.dataset.cu=tx;b.textContent='0'+tx.replace(/^\d+/,'');io2.observe(b)}});
+}
+/* SpotlightCard: glow follows the pointer */
+document.querySelectorAll('.card,.sv,.stat,.final').forEach(c=>{
+  c.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;const r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px');c.classList.add('sp')});
+  c.addEventListener('pointerleave',()=>c.classList.remove('sp'));
+});
+/* Particles: soft floating dots that drift away from the pointer */
+if(!RM){
+  const cv=document.createElement('canvas');cv.id='bg-particles';cv.setAttribute('aria-hidden','true');document.body.prepend(cv);
+  const x=cv.getContext('2d');let W,H,dpr,P=[],mx=-9999,my=-9999,run=true;
+  const cols=['0,229,255','160,120,255','255,255,255'];
+  function size(){dpr=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*dpr;H=cv.height=innerHeight*dpr;
+    const n=Math.round(Math.min(70,innerWidth*innerHeight/22000));
+    P=Array.from({length:n},()=>({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.25*dpr,vy:(Math.random()-.5)*.25*dpr,r:(Math.random()*1.6+.6)*dpr,c:cols[Math.floor(Math.random()*cols.length)],a:Math.random()*.5+.25}))}
+  size();addEventListener('resize',size);
+  addEventListener('pointermove',e=>{mx=e.clientX*dpr;my=e.clientY*dpr});
+  document.addEventListener('visibilitychange',()=>{run=!document.hidden;if(run)requestAnimationFrame(loop)});
+  function loop(){if(!run)return;x.clearRect(0,0,W,H);
+    for(const p of P){
+      const dx=p.x-mx,dy=p.y-my,d=Math.hypot(dx,dy),R=140*dpr;
+      if(d<R&&d>0){p.x+=dx/d*(R-d)*.03;p.y+=dy/d*(R-d)*.03}
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=W;if(p.x>W)p.x=0;if(p.y<0)p.y=H;if(p.y>H)p.y=0;
+      x.beginPath();x.fillStyle='rgba('+p.c+','+p.a+')';x.arc(p.x,p.y,p.r,0,6.2832);x.fill();
+    }
+    requestAnimationFrame(loop)}
+  loop();
+}
+})();
+</script>
 </body></html>
