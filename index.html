@@ -160,7 +160,11 @@ footer{padding:36px 0 90px;text-align:center;color:#b9aedd;border-top:1px solid 
 .card:hover .shot img{transform:none}
 </style>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
-<script type="module">
+<script>
+window.__LITE=matchMedia("(pointer: coarse)").matches||innerWidth<700||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4;
+if(window.__LITE)document.documentElement.classList.add("lite");
+</script>
+<script type="text/plain" id="pc-src">
 /* PaperCrumple (react-bits, MIT + Commons Clause, https://github.com/DavidHDev/react-bits) ported to vanilla JS for static pages. */
 import * as THREE from 'three';
 const spring = (value = 0) => ({ value, target: value, velocity: 0 });
@@ -1193,6 +1197,9 @@ function boot(){
 const go=()=>('requestIdleCallback' in window?requestIdleCallback(boot,{timeout:2500}):setTimeout(boot,800));
 if(document.readyState==='complete')go();else addEventListener('load',go,{once:true});
 </script>
+<script>
+if(!window.__LITE){addEventListener("load",()=>{const src=document.getElementById("pc-src").textContent;const u=URL.createObjectURL(new Blob([src],{type:"text/javascript"}));import(u).catch(e=>console.warn("crumple off",e))},{once:true})}
+</script>
 <!-- react-bits style animations (BlurText, CountUp, SpotlightCard, Particles), vanilla JS ports -->
 <style>
 .bt-w{display:inline-block;opacity:0;filter:blur(10px);transform:translateY(-22px);transition:opacity .6s ease,filter .6s ease,transform .6s ease;will-change:transform,filter,opacity}
@@ -1201,11 +1208,18 @@ if(document.readyState==='complete')go();else addEventListener('load',go,{once:t
 .card::before,.sv::before,.stat::before,.final::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;opacity:0;transition:opacity .35s;background:radial-gradient(circle 220px at var(--mx,50%) var(--my,50%),rgba(0,229,255,.16),transparent 70%)}
 .card.sp::before,.sv.sp::before,.stat.sp::before,.final.sp::before{opacity:1}
 #bg-particles{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
-html.lite .bt-w{filter:none;transition:opacity .5s ease,transform .5s ease}
+html.lite .bt-w{opacity:1;transform:none;transition:none}
+html.lite nav{backdrop-filter:none;background:#120a33f2}
+html.lite .card,html.lite .stat{backdrop-filter:none}
+html.lite .card{transition:none}
+html.lite .card:hover{transform:none}
+html.lite .card:hover img{transform:none}
+html.lite .reveal{transition:opacity .3s}
+html.lite .bt-w-old{filter:none;transition:opacity .5s ease,transform .5s ease}
 @media(prefers-reduced-motion:reduce){.bt-w{opacity:1;filter:none;transform:none;transition:none}#bg-particles{display:none}}
 </style>
 <script>
-addEventListener('load',()=>setTimeout(()=>{
+addEventListener('load',()=>setTimeout(()=>{if(window.__LITE)return;
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const LITE=matchMedia('(pointer: coarse)').matches||innerWidth<700||(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4;
 if(LITE)document.documentElement.classList.add('lite');
